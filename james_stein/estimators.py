@@ -1,4 +1,4 @@
-"""A collection of relevant estimators to the James Stein Paradox.
+"""A collection of relevant estimators to Stein's Paradox.
 
 Assumed that the data has unit mean.
 """
