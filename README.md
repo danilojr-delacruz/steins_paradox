@@ -1,1 +1,3 @@
-# steins_paradox
+# Stein's Paradox
+
+Insert abstract here.
