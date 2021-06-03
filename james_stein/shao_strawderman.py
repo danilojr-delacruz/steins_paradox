@@ -144,7 +144,7 @@ class GenerateSS:
 
     @property
     def a(self):
-        return min(self.B, 2 * self.A * (self.p - 2) * self.b(self.p_star))
+        return min(self.B, 2 * self.A * (self.p - 2) * self.b(self.p_star)) / 2
 
     def estimator(self, p_star=None, a=None):
         """Return Shao-Strawderman Estimator."""
