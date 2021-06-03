@@ -35,7 +35,7 @@ goals_data
 ```{r}
 # Install dplyr package
 library("dplyr")
-data = read.csv("Downloads/archive-5/results.csv", header =TRUE)
+data = read.csv("results.csv", header =TRUE)
 data = data %>% select(Season, DateTime, HomeTeam, AwayTeam, FTHG, FTAG) %>% filter(Season == "2018-19")
 home_goals = data %>% group_by(HomeTeam, Season) %>%
                 summarise(total_home_goals = sum(FTHG), games_home = length(FTHG)) 
@@ -48,7 +48,7 @@ goals = goals %>% group_by(Team) %>% select(Team, total_home_goals, total_away_g
 goals_per_season = goals
 
 #goals in early part of season, 2020/21
-data = read.csv("Downloads/archive-5/results.csv", header =TRUE)
+data = read.csv("results.csv", header =TRUE)
 data[["DateTime"]] = as.Date(data[["DateTime"]])
 data = data %>% select(Season, DateTime, HomeTeam, AwayTeam, FTHG, FTAG) %>% filter(Season == "2018-19", DateTime <= "2018-10-22")
 home_goals = data %>% group_by(HomeTeam, Season) %>%
@@ -60,9 +60,6 @@ colnames(away_goals)[1] = "Team"
 goals = merge(home_goals, away_goals)
 goals = goals %>% group_by(Team) %>% select(Team, total_home_goals, total_away_goals, games_home, games_away) %>% summarise(goals = total_home_goals + total_away_goals, games = games_home + games_away)
 goals_first_part= goals
-goals_per_season
-goals_first_part$abbrv = c("Ar","Bo","Br", "Bu","Ca","Ch","Cr","Ev","Fu","Hu","Le", "Li", "MC", "MU","Ne", "So", "To", "Wa","WH","Wo")
-goals_first_part
 ```
 
 
@@ -138,7 +135,6 @@ for (i in 1:20){
     lines(c((goals_per_season$goals/38)[i], limited_estimators[i]), c(2,3))
     lines(c((goals_per_season$goals/38)[i], (goals_first_part$goals/9)[i]), c(2,1))
 }
-new_estimates
 limited_estimators
 ```
 
@@ -180,7 +176,7 @@ Now replicate over multiple seasons and see how many teams are improved each sea
 season_calculation <- function(seasons, dates){
  table <- data.frame(Season =c(),'MLE SSE' = c(),'JS SSE' = c(), 'JS Improvement' = c(), 'Adapt. JS SSE' = c(), 'Adapt. JS Improvement' = c(), limited_risk = c(), limited_improvement = c())
 for (i in 1:length(seasons)){
-data = read.csv("Downloads/archive-5/results.csv", header =TRUE)
+data = read.csv("results.csv", header =TRUE)
 data = data %>% select(Season, DateTime, HomeTeam, AwayTeam, FTHG, FTAG) %>% filter(Season == seasons[i])
 home_goals = data %>% group_by(HomeTeam, Season) %>%
                 summarise(total_home_goals = sum(FTHG), games_home = length(FTHG)) 
@@ -193,7 +189,7 @@ goals = goals %>% group_by(Team) %>% select(Team, total_home_goals, total_away_g
 goals_per_season = goals
 
 #goals in early part of season, 2020/21
-data = read.csv("Downloads/archive-5/results.csv", header =TRUE)
+data = read.csv("results.csv", header =TRUE)
 data[["DateTime"]] = as.Date(data[["DateTime"]])
 data = data %>% select(Season, DateTime, HomeTeam, AwayTeam, FTHG, FTAG) %>% filter(Season == seasons[i], DateTime <=dates[i])
 home_goals = data %>% group_by(HomeTeam, Season) %>%
@@ -213,10 +209,10 @@ JS_estimates <- JS_estimates/9
 adapted_JS_estimates <- mean(transformed) + (1-17/(Norm(transformed-mean(transformed))^2))*(transformed - mean(transformed))
 adapted_JS_estimates <- (adapted_JS_estimates/2)^2-3/8
 adapted_JS_estimates <- adapted_JS_estimates/9
-JS_risk <- Norm(JS_estimates-goals_per_season$goals/38)
+JS_risk <- Norm(JS_estimates-goals_per_season$goals/38)^2
 JS_improvement = sum(abs(JS_estimates - goals_per_season$goals/38 ) < abs(goals_first_part$goals/9 - goals_per_season$goals/38))
-MLE_SSE <-  Norm(goals_first_part$goals/9-goals_per_season$goals/38)
-adapted_JS_risk <- Norm(adapted_JS_estimates-goals_per_season$goals/38)
+MLE_SSE <-  Norm(goals_first_part$goals/9-goals_per_season$goals/38)^2
+adapted_JS_risk <- Norm(adapted_JS_estimates-goals_per_season$goals/38)^2
 adapted_JS_improvement <- sum(abs(adapted_JS_estimates - goals_per_season$goals/38 ) < abs(goals_first_part$goals/9 - goals_per_season$goals/38))
 limited_estimators <- mean(transformed) + (1-17/(Norm(transformed-mean(transformed))^2))*(transformed - mean(transformed))
 for (i in 1:20){
@@ -224,7 +220,7 @@ for (i in 1:20){
 }
 limited_estimators  <- (limited_estimators/2)^2-3/8
 limited_estimators<- limited_estimators/9
-limited_estimators_risk <- Norm(limited_estimators - goals_per_season$goals/38)
+limited_estimators_risk <- Norm(limited_estimators - goals_per_season$goals/38)^2
 limited_improvement <- sum(abs(limited_estimators- goals_per_season$goals/38 ) < abs(goals_first_part$goals/9 - goals_per_season$goals/38))
 season = seasons[i]
 new_season <- data.frame( season , MLE_SSE, JS_risk, JS_improvement,  adapted_JS_risk, adapted_JS_improvement, limited_estimators_risk, limited_improvement)
@@ -236,7 +232,6 @@ return(table)
 
 use function to carry out task:
 ```{r}
-
 seasons = c("2015-16", "2016-17", "2017-18","2018-19", "2019-20")
 dates = c("2015-10-19", "2016-10-23","2017-10-22","2018-10-22", "2019-10-21")
 latex_2 = season_calculation(seasons, dates)
@@ -245,4 +240,14 @@ colnames(latex_2) = c('Season', 'MLE SSE', 'JS SSE','JS Improvement', 'Adapt. JS
 latex_2
 ```
 
+latex tables
+```{r}
+library(xtable)
+#Expected risk table
+print(xtable(risk_table, type = "latex"), file = "risk_table.tex")
+#2018-19 detailed table
+print(xtable(table, type = "latex"), file = "2018-19_club.tex")
+#season comparisons
+print(xtable(latex_2, type = "latex"), file = "season_comparison.tex")
+```
 
