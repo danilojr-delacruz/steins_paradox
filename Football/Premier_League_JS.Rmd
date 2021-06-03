@@ -157,7 +157,11 @@ table$"Improvement Adapt. JS" <- abs(adapted_JS_estimates - goals_per_season$goa
 table
 
 ```
-
+error change vector
+```{r}
+error = table$`MLE SSE` - table$`Adapt. JS Error`
+error
+```
 Risk Table (for untransformed variables)
 
 ```{r}
@@ -250,4 +254,5 @@ print(xtable(table, type = "latex"), file = "2018-19_club.tex")
 #season comparisons
 print(xtable(latex_2, type = "latex"), file = "season_comparison.tex")
 ```
+
 
