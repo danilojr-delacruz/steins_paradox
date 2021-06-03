@@ -1,0 +1,89 @@
+---
+title: "Stein's Paradox"
+output: html_notebook
+---
+
+Define variables and functions needed
+```{r}
+library(ggplot2)
+
+
+p <- 20
+eucl_len <- function(x) {
+  sqrt(sum(x^2))
+}
+
+
+simulate <- function(means) {
+  p <- length(means)
+  JS_loss <- c()
+  posJS_loss <- c()
+  mean_shift_loss <- c()
+  lim_tr_loss <- c()
+  intuitive_loss <- c()
+  
+  
+  for (i in 1:200){
+  normal <- rnorm(means, means, 1) #Generate sample from normal distribution, independent
+
+  ybar <- mean(normal)
+  c <- 1 - (p-3)/eucl_len(normal - ybar)^2
+  len_x <- eucl_len(normal)
+  a <- p - 2 #minimises risk
+
+  mean_shift <- ybar + c*(normal - ybar)
+  JS <- (1 - a/len_x^2)*normal
+  posJS <- 0*normal
+  if (a < len_x^2){
+    posJS <- JS
+  }
+  lim_tr <- c()
+  for (i in 1:p){
+    lim_tr[i] <- min(max(mean_shift[i], normal[i] - 1), normal[i] + 1) 
+  }
+  
+
+  JS_loss <- c(JS_loss, eucl_len(JS - means)^2)
+  posJS_loss <- c(posJS_loss, eucl_len(posJS - means)^2)
+  mean_shift_loss <- c(mean_shift_loss, eucl_len(mean_shift - means)^2)
+  lim_tr_loss <- c(lim_tr_loss, eucl_len(lim_tr - means)^2)
+  intuitive_loss <- c(intuitive_loss, eucl_len(normal - means)^2)
+
+    
+    
+}
+  x <- list()
+  x[[1]] <- JS_loss
+  x[[2]] <- posJS_loss
+  x[[3]] <- mean_shift_loss
+  x[[4]] <- lim_tr_loss
+  x[[5]] <- intuitive_loss
+
+  
+  return(x)
+}
+
+find_means <- function(x) {
+  risk <- c()
+  for (i in 1:length(x)) {
+    risk[i] <- mean(x[[i]])
+}
+  return(risk)
+}
+```
+Simulate risk for Unif(-1, 1) prior
+```{r}
+set.seed(267462)
+
+means_unif <- runif(p, -1, 1)
+unif <- simulate(means_unif)
+names <- c("JS", "+ve JS", "Mean Shift", "Limited", "MLE")
+barplot(find_means(unif), ylab = "Estimate of risk", names.arg = names, ylim = c(0, 20))
+```
+Simulate risk when extreme values are added
+```{r}
+set.seed(735284)
+means_extreme <- c(runif(p-2, -1, 1), runif(2, 40, 100))
+extreme <- simulate(means_extreme)
+barplot(find_means(extreme), ylab = "Estimate of risk", names.arg = names, ylim = c(0, 20))
+```
