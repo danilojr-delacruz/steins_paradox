@@ -8,46 +8,66 @@ Define variables and functions needed
 library(ggplot2)
 
 
-p <- 20
-eucl_len <- function(x) {
-  sqrt(sum(x^2))
+p <- 10
+eucl_len2 <- function(x) {
+  sum(x^2)
 }
 
+mod_last <- function(x) {
+  abs(x[length(x)])
+}
 
-simulate <- function(means) {
+g <- function(t, p, p_star){
+  if (t >= p_star & t <= p){
+    return(t-p)
+  }
+  if (t >= p-1 & t < p_star){
+    return(2*p_star-p-t)
+  }
+  
+}
+simulate <- function(means, loss_fn) {
   p <- length(means)
   JS_loss <- c()
   posJS_loss <- c()
   mean_shift_loss <- c()
   lim_tr_loss <- c()
+  straw_loss <- c()
   intuitive_loss <- c()
   
   
   for (i in 1:200){
-  normal <- rnorm(means, means, 1) #Generate sample from normal distribution, independent
+  normal <- rnorm(p, means, 1) #Generate sample from normal distribution, independent
 
   ybar <- mean(normal)
-  c <- 1 - (p-3)/eucl_len(normal - ybar)^2
-  len_x <- eucl_len(normal)
+  c <- 1 - (p-3)/eucl_len2(normal - ybar)
+  len_x2 <- eucl_len2(normal)
   a <- p - 2 #minimises risk
+  straw_a <- 0.0339
+  p_star <- 9.705
 
   mean_shift <- ybar + c*(normal - ybar)
-  JS <- (1 - a/len_x^2)*normal
+  JS <- (1 - a/len_x2)*normal
   posJS <- 0*normal
-  if (a < len_x^2){
+  if (a < len_x2){
     posJS <- JS
+  }
+  straw <- posJS
+  if (len_x2 >= p-2 & len_x2 <= p){
+    straw <- posJS - a*g(len_x2, p, p_star)*normal/len_x2
   }
   lim_tr <- c()
   for (i in 1:p){
-    lim_tr[i] <- min(max(mean_shift[i], normal[i] - 1), normal[i] + 1) 
+    lim_tr[i] <- min(c(max(c(mean_shift[i], normal[i] - 1)), normal[i] + 1))
   }
   
 
-  JS_loss <- c(JS_loss, eucl_len(JS - means)^2)
-  posJS_loss <- c(posJS_loss, eucl_len(posJS - means)^2)
-  mean_shift_loss <- c(mean_shift_loss, eucl_len(mean_shift - means)^2)
-  lim_tr_loss <- c(lim_tr_loss, eucl_len(lim_tr - means)^2)
-  intuitive_loss <- c(intuitive_loss, eucl_len(normal - means)^2)
+  JS_loss <- c(JS_loss, loss_fn(JS - means))
+  posJS_loss <- c(posJS_loss, loss_fn(posJS - means))
+  mean_shift_loss <- c(mean_shift_loss, loss_fn(mean_shift - means))
+  lim_tr_loss <- c(lim_tr_loss, loss_fn(lim_tr - means))
+  straw_loss <- c(straw_loss, loss_fn(straw - means))
+  intuitive_loss <- c(intuitive_loss, loss_fn(normal - means))
 
     
     
@@ -57,7 +77,8 @@ simulate <- function(means) {
   x[[2]] <- posJS_loss
   x[[3]] <- mean_shift_loss
   x[[4]] <- lim_tr_loss
-  x[[5]] <- intuitive_loss
+  x[[5]] <- straw_loss
+  x[[6]] <- intuitive_loss
 
   
   return(x)
@@ -76,14 +97,30 @@ Simulate risk for Unif(-1, 1) prior
 set.seed(267462)
 
 means_unif <- runif(p, -1, 1)
-unif <- simulate(means_unif)
-names <- c("JS", "+ve JS", "Mean Shift", "Limited", "MLE")
-barplot(find_means(unif), ylab = "Estimate of risk", names.arg = names, ylim = c(0, 20))
+unif <- simulate(means_unif, eucl_len2)
+names <- c("JS", "+ve JS", "Mean Shift", "Limited", "Straw", "MLE")
+barplot(find_means(unif), ylab = "Estimate of risk", names.arg = names, ylim = c(0, 10))
 ```
 Simulate risk when extreme values are added
 ```{r}
 set.seed(735284)
 means_extreme <- c(runif(p-2, -1, 1), runif(2, 40, 100))
-extreme <- simulate(means_extreme)
+extreme <- simulate(means_extreme, eucl_len2)
+
+png("extreme.png", width=500, height=500)
+
 barplot(find_means(extreme), ylab = "Estimate of risk", names.arg = names, ylim = c(0, 20))
+
+dev.off()
+```
+```{r}
+set.seed(825424)
+means_extreme_mod <- c(runif(p-1, 1, 2), runif(1, 3, 4))
+extreme_mod <- simulate(means_extreme, mod_last)
+
+#png("extreme_mod.png", width=500, height=500)
+
+barplot(find_means(extreme_mod), ylab = "Estimate of risk", names.arg = names, ylim = c(0, 1))
+
+#dev.off()
 ```
