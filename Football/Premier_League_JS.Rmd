@@ -100,7 +100,7 @@ Norm(adapted_JS_estimates - goals_per_season$goals/38)^2
 plot(goals_per_season$goals/38, rep(2,20),  ylim = c(0.5,3.5), xlim = c(0,3.4), yaxt = "n", ylab =  '', xlab = "Estimates", col = "blue", pch = 15)
 points(adapted_JS_estimates, rep(3,20), col = "blue", pch = 16)
 points(goals_first_part$goals/9, rep(1,20), col = "blue", pch = 17)
-legend(2.6,3.3, legend = c("A.JS", "True Value", "MLE"), pch = c(15,16,17), col = c("blue", "blue", "blue"))
+legend(2.6,3.3, legend = c("A.JS", "True Value", "MLE"), pch = c(16,15,17), col = c("blue", "blue", "blue"))
 sum(abs(adapted_JS_estimates - goals_per_season$goals/38 ) < abs(goals_first_part$goals/9 - goals_per_season$goals/38))
 for (i in 1:20){
     lines(c((goals_per_season$goals/38)[i], adapted_JS_estimates[i]), c(2,3))
@@ -249,7 +249,7 @@ colnames(latex_2) = c('Season', 'MLE SSE', 'JS SSE','JS Improvement', 'Adapt. JS
 latex_2
 ```
 
-latex tables
+Latex Tables
 ```{r}
 library(xtable)
 #Expected risk table
@@ -260,4 +260,4 @@ print(xtable(table, type = "latex"), file = "2018-19_club.tex")
 print(xtable(latex_2, type = "latex"), file = "season_comparison.tex")
 ```
 
-
+Adding an additional covariate?
