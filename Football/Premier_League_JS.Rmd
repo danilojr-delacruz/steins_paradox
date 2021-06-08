@@ -97,7 +97,7 @@ First calculate the risk from each.
 Norm(goals_first_part$goals/9 -goals_per_season$goals/38)^2
 Norm(JS_estimates - goals_per_season$goals/38)^2
 Norm(adapted_JS_estimates - goals_per_season$goals/38)^2
-plot(goals_per_season$goals/38, rep(2,20),  ylim = c(0.5,3.5), xlim = c(0,3.5), yaxt = "n", ylab =  '', xlab = "Estimates", col = "blue", pch = 15)
+plot(goals_per_season$goals/38, rep(2,20),  ylim = c(0.5,3.5), xlim = c(0,3.4), yaxt = "n", ylab =  '', xlab = "Estimates", col = "blue", pch = 15)
 points(adapted_JS_estimates, rep(3,20), col = "blue", pch = 16)
 points(goals_first_part$goals/9, rep(1,20), col = "blue", pch = 17)
 legend(2.6,3.3, legend = c("A.JS", "True Value", "MLE"), pch = c(15,16,17), col = c("blue", "blue", "blue"))
