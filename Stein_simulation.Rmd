@@ -5,8 +5,7 @@ output: html_notebook
 
 Define variables and functions needed
 ```{r}
-library(ggplot2)
-
+library(RColorBrewer)
 
 p <- 10
 eucl_len2 <- function(x) {
@@ -98,29 +97,65 @@ set.seed(267462)
 
 means_unif <- runif(p, -1, 1)
 unif <- simulate(means_unif, eucl_len2)
-names <- c("JS", "+ve JS", "Mean Shift", "Limited", "Straw", "MLE")
-barplot(find_means(unif), ylab = "Estimate of risk", names.arg = names, ylim = c(0, 10))
+names <- c("JS", "JS+", "a.JS", "LTE", "Shao-S", "MLE")
+colours <- brewer.pal(6, "Blues")
+
+png("zero.png", width=526, height=300)
+
+barplot(find_means(unif), ylab = "Estimate of risk", names.arg = names, ylim = c(0, 10), col=colours)
+
+dev.off()
+print(find_means(unif))
 ```
+```{r}
+set.seed(638462)
+means_large <- runif(p, 10, 11)
+large <- simulate(means_large, eucl_len2)
+
+png("large.png", width=526, height=300)
+
+barplot(find_means(large), ylab = "Estimate of risk", names.arg = names, ylim = c(0, 12), col=colours)
+
+dev.off()
+print(find_means(large))
+```
+
 Simulate risk when extreme values are added
 ```{r}
 set.seed(735284)
 means_extreme <- c(runif(p-2, -1, 1), runif(2, 40, 100))
 extreme <- simulate(means_extreme, eucl_len2)
 
-png("extreme.png", width=500, height=500)
+png("extreme.png", width=526, height=300)
 
-barplot(find_means(extreme), ylab = "Estimate of risk", names.arg = names, ylim = c(0, 20))
+barplot(find_means(extreme), ylab = "Estimate of risk", names.arg = names, ylim = c(0, 12), col=colours)
 
 dev.off()
+print(find_means(extreme))
 ```
+To be redone 
 ```{r}
-set.seed(825424)
-means_extreme_mod <- c(runif(p-1, 1, 2), runif(1, 3, 4))
-extreme_mod <- simulate(means_extreme, mod_last)
+#set.seed(8254236)
+#means_extreme_mod <- runif(p, -1, 1)
+#extreme_mod <- simulate(means_extreme_mod, mod_last)
 
-#png("extreme_mod.png", width=500, height=500)
+#png("extreme_mod.png", width=526, height=300)
 
-barplot(find_means(extreme_mod), ylab = "Estimate of risk", names.arg = names, ylim = c(0, 1))
+#barplot(find_means(extreme_mod), ylab = "Estimate of risk", names.arg = names, ylim = c(0, 1), col=colours)
 
 #dev.off()
+#print(find_means(extreme_mod))
+```
+Simulation for means clustered around two values - not particularly interesting
+```{r}
+set.seed(537225)
+means_pair <- c(runif(p/2, 5, 6), runif(p/2, -6, -5))
+pair <- simulate(means_pair, eucl_len2)
+
+png("pair.png", width=526, height=300)
+
+barplot(find_means(pair), ylab = "Estimate of risk", names.arg = names, ylim = c(0, 12), col=colours)
+
+dev.off()
+print(find_means(pair))
 ```
