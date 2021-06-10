@@ -1,0 +1,57 @@
+---
+title: "Positive Part Simulations"
+author: "Thomas Lloyd"
+date: "10/06/2021"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+
+```{r}
+library(ggplot2)
+library(latex2exp)
+library(RColorBrewer) 
+y1 <- c()
+y2 <- c()
+y2_hat <- c()
+norm = c()
+cfinal = c()
+for (theta in linspace(0,4,120)){
+  c_list = c()
+  sum = c(0,0,0)
+  for (i in 1:100){
+  matrix = c(0,0,0)
+  data <- c()
+  n = 6
+  means <- c()
+  for (i in 1:n){
+  mean <- runif(1,theta-.01,theta+0.1)
+  val = rnorm(1, mean, 1)
+  data = c(data, val)
+  means <- c(means, mean)
+  }
+  c = (1-((n-2)/(Norm(data)^2)))
+  c_hat = max(0, c)
+  data1 = c*data
+  data2 = c_hat*data
+  c_list = c(c_list, c)
+  matrix = c(Norm(theta-data)^2, Norm(theta-data1)^2, Norm(theta-data2)^2)
+
+  sum = sum + matrix
+  }
+  cfinal = c(cfinal, mean(c_list))
+  sum = sum/100
+  norm = c(norm, Norm(means))
+  y1 = c(y1, sum[1])
+  y2 = c(y2, sum[2])
+  y2_hat = c(y2_hat, sum[3])
+}
+colours <- brewer.pal(3, "Blues")
+ggplot() + geom_smooth(aes(x = norm ,y = y2, color = 'a'), se = FALSE)  + 
+  geom_smooth(aes(x = norm, y = y2_hat, color ='b'), se = FALSE) + 
+  labs(x = TeX("$E\\[ || \\theta || \\]$"), y = "SSE") +theme(panel.grid.major = element_blank(), panel.grid.minor = element_blank(),panel.background = element_blank(), axis.line = element_line(colour = "black")) + 
+  scale_colour_manual(name = 'Estimator', guide = "legend", values = c('a' = colours[2], 'b' = colours[3]), labels = c('JS','JS+')) 
+```
