@@ -9,28 +9,7 @@ output: html_document
 knitr::opts_chunk$set(echo = TRUE)
 ```
 
-Firstly get each clubs number of goals in the season both home and away.
-```{r}
-# Install dplyr package
-library("dplyr")
-data = read.csv("~/Downloads/england-premier-league-matches-2018-to-2019-stats.csv", header =TRUE)
-home_goals = data %>% group_by(home_team_name) %>%
-                summarize(total_home_goals = sum(home_team_goal_count))
-away_goals = data %>% group_by(away_team_name) %>%
-                summarize(total_away_goals = sum(away_team_goal_count))
-goals = merge(home_goals, away_goals, by.x = "home_team_name", by.y = "away_team_name")
-goals = goals %>% summarize(team = home_team_name, home_goals = total_home_goals, away_goals = total_away_goals, total_goals = total_home_goals + total_away_goals, avg_gpg = (total_home_goals + total_away_goals)/38)
-goals
-home_goals = data %>% group_by(home_team_name) %>% filter(Game.Week <= 9) %>%
-                summarize(total_home_goals = sum(home_team_goal_count))
-away_goals = data %>% group_by(away_team_name) %>% filter(Game.Week <= 9) %>%
-                summarize(total_away_goals = sum(away_team_goal_count))
-goals1 = merge(home_goals, away_goals, by.x = "home_team_name", by.y = "away_team_name")
-goals1 = goals1 %>% summarize(team = home_team_name, home_goals = total_home_goals, away_goals = total_away_goals, total_goals_first_10 = total_home_goals + total_away_goals, avg_gpg_first_10 = (total_home_goals + total_away_goals)/9)
-goal1 = goals1 %>% select(team, total_goals_first_10, avg_gpg_first_10)
-goals_data = merge(goals, goals1, by.x = "team", by.y = "team")
-goals_data
-```
+Calculation of GPG (goals per game) averages for first 9 games and across the season for each team.
 
 ```{r}
 # Install dplyr package
@@ -62,13 +41,12 @@ goals = goals %>% group_by(Team) %>% select(Team, total_home_goals, total_away_g
 goals_first_part= goals
 ```
 
-
 Now carry out James-Stein estimation.
 
-Firstly I am assuming that each team's goal scoring rate, $X_i$ is distributed as follows $X_i \sim Poisson(\mu_i)$ where $\mu_i$ is the expected goals per game. Therefore across the first 10 matches $\sum_{i=1}^{10}X_i \sim Poisson(10\mu_i)$, which I can assume to be Normally distributed. As the variance is unknown - it can be approximated by $\frac{1}{n}\sum_{j}(X_{ij}-\bar{X_i})^2$.
+Firstly I am assuming that each team's goal scoring rate, $X_i$ is distributed as follows $X_i \sim Poisson(\mu_i)$ where $\mu_i$ is the expected goals per game. Therefore across the first 9 matches $\sum_{i=1}^{9}X_i \sim Poisson(9\mu_i)$, which I can transform to become approximately normally distributed (Using Anscombe's transformation). The variance is approximately 1.
 
 
-We now have estimates for the standard deviation, therefore I can translate to obtain vector of 20 variables distributed with required distribution for Stein's paradox.
+Using Anscombe's transformation.
 
 ```{r}
 transformed = 2*sqrt(goals_first_part$goals +3/8)
@@ -94,18 +72,23 @@ Now compare with actual value, standard estimator and James Stein.
 First calculate the risk from each.
 
 ```{r}
+#MLE based SSE
 Norm(goals_first_part$goals/9 -goals_per_season$goals/38)^2
+#JS based SSE
 Norm(JS_estimates - goals_per_season$goals/38)^2
+#MCJS based SSE
 Norm(adapted_JS_estimates - goals_per_season$goals/38)^2
+#MC James-Stein plot
 plot(goals_per_season$goals/38, rep(2,20),  ylim = c(0.5,3.5), xlim = c(0,3.4), yaxt = "n", ylab =  '', xlab = "GPG Estimates", col = "blue", pch = 15)
 points(adapted_JS_estimates, rep(3,20), col = "blue", pch = 16)
 points(goals_first_part$goals/9, rep(1,20), col = "blue", pch = 17)
-legend(2.6,3.3, legend = c("MC.JS", "True Value'", "MLE"), pch = c(16,15,17), col = c("blue", "blue", "blue"))
+legend(2.6,3.3, legend = c("MCJS", "True Value'", "MLE"), pch = c(16,15,17), col = c("blue", "blue", "blue"))
 sum(abs(adapted_JS_estimates - goals_per_season$goals/38 ) < abs(goals_first_part$goals/9 - goals_per_season$goals/38))
 for (i in 1:20){
     lines(c((goals_per_season$goals/38)[i], adapted_JS_estimates[i]), c(2,3))
     lines(c((goals_per_season$goals/38)[i], (goals_first_part$goals/9)[i]), c(2,1))
 }
+#James-Stein plot
 plot(goals_per_season$goals/38, rep(2,20),  ylim = c(0.5,3.5), xlim = c(0,3), yaxt = "n", ylab =  '', xlab = "GPG Estimates", col = "blue", pch = 15)
 points(JS_estimates, rep(3,20), col = "blue", pch = 16)
 points(goals_first_part$goals/9, rep(1,20), col = "blue", pch = 17)
@@ -118,6 +101,7 @@ for (i in 1:20){
 
 Compute limited translation estimator- and see if any improvement.
 ```{r}
+#limited translation plot
 transformed = 2*sqrt(goals_first_part$goals + 3/8)
 
 limited_estimators <- mean(transformed) + (1-17/(Norm(transformed-mean(transformed))^2))*(transformed - mean(transformed))
@@ -140,7 +124,7 @@ limited_estimators
 ```
 
 
-Nice tables for output in latex
+Table for output in latex, to be included in project
 
 ```{r}
 goals1 = goals_first_part %>% group_by(Team, goals)  %>% summarise(avg = goals/9)
@@ -158,14 +142,14 @@ table$"Improvement Adapt. JS" <- abs(adapted_JS_estimates - goals_per_season$goa
 table
 
 ```
-average error change vector for improvements upon MLE
+Average error change vector for improvements upon MLE, compared to average GPG across all teams
 ```{r}
 error = abs(table$`MLE SSE` - table$`Adapt. JS Error`)
 error
-sum(error*(1-table$`Improvement Adapt. JS`))/14
+sum(error*(table$`Improvement Adapt. JS`))/14
 mean(table$`Season Average GPG`)
 ```
-Risk Table (for untransformed variables)
+Risk Table (for non-re-transformed variables), for output in Latex and inclusion in project
 
 ```{r}
 new_means = table$`Season Average GPG`
@@ -177,7 +161,7 @@ risk_table
 ```
 
 
-Now replicate over multiple seasons and see how many teams are improved each season by the adapted James-Stein estimator.
+Now replicate over multiple seasons and see how many teams are improved each season by the MC James-Stein estimator, limited variance JS and standard JS.
 
 ```{r}
 library("dplyr")
@@ -241,7 +225,7 @@ return(table)
 }
 ```
 
-use function to carry out task:
+Use function defined above to carry out task:
 ```{r}
 seasons = c("2015-16", "2016-17", "2017-18","2018-19", "2019-20")
 dates = c("2015-10-19", "2016-10-23","2017-10-22","2018-10-22", "2019-10-21")
@@ -251,7 +235,7 @@ colnames(latex_2) = c('Season', 'MLE SSE', 'JS SSE','JS Improvement', 'Adapt. JS
 latex_2
 ```
 
-Latex Tables
+Latex Table (Output Files)
 ```{r}
 library(xtable)
 #Expected risk table
@@ -261,5 +245,3 @@ print(xtable(table, type = "latex"), file = "2018-19_club.tex")
 #season comparisons
 print(xtable(latex_2, type = "latex"), file = "season_comparison.tex")
 ```
-
-Adding an additional covariate?

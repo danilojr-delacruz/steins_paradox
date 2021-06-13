@@ -53,6 +53,6 @@ for (theta in linspace(0,4,120)){
 colours <- brewer.pal(3, "Blues")
 ggplot() + geom_smooth(aes(x = norm ,y = y2, color = 'a'), se = FALSE)  + 
   geom_smooth(aes(x = norm, y = y2_hat, color ='b'), se = FALSE) + 
-  labs(x = TeX("$E\\[ || \\theta || \\]$"), y = "SSE") +theme(panel.grid.major = element_blank(), panel.grid.minor = element_blank(),panel.background = element_blank(), axis.line = element_line(colour = "black"), legend.key = element_rect(colour = NA, fill = NA)) + 
+  labs(x = TeX("$E\\|| \\theta ||$"), y = "SSE") +theme(panel.grid.major = element_blank(), panel.grid.minor = element_blank(),panel.background = element_blank(), axis.line = element_line(colour = "black"), legend.key = element_rect(colour = NA, fill = NA)) + 
   scale_colour_manual(name = 'Estimator', guide = "legend", values = c('a' = colours[2], 'b' = colours[3]), labels = c('JS','JS+')) 
 ```
