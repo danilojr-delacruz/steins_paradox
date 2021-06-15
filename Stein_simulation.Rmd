@@ -7,75 +7,84 @@ Define variables and functions needed
 ```{r}
 library(RColorBrewer)
 
-p <- 10
-eucl_len2 <- function(x) {
+p <- 10 #dimension for each simulation
+eucl_len2 <- function(x) { #finds squared euclidean length of a vector
   sum(x^2)
 }
 
-mod_last <- function(x) {
-  abs(x[length(x)])
-}
-
-g <- function(t, p, p_star){
-  if (t >= p_star & t <= p){
+g <- function(t, p, p_star){ #used in calculating Shao-Strawderman estimator
+  if (t > p-1){
+    if (abs(p-1-t) <= p_star - p + 1){
+    return(2*p_star-p-t)
+  }
+  else{
     return(t-p)
   }
-  if (t >= p-1 & t < p_star){
+  }
+  else{
+    t <- 2*abs(p-1-t) + (p-1)
+    if (abs(p-1-t) <= p_star - p + 1){
     return(2*p_star-p-t)
+  }
+  else{
+    return(t-p)
+  }
   }
   
 }
-simulate <- function(means, loss_fn) {
+simulate <- function(means, loss_fn) { #runs a simulation for a vector of means and given loss function
   p <- length(means)
   JS_loss <- c()
   posJS_loss <- c()
-  mean_shift_loss <- c()
-  lim_tr_loss <- c()
+  MCJS_loss <- c()
+  LTE_loss <- c()
   straw_loss <- c()
   intuitive_loss <- c()
   
   
   for (i in 1:200){
-  normal <- rnorm(p, means, 1) #Generate sample from normal distribution, independent
+  sample <- rnorm(p, means, 1) #generate sample from normal distribution, independent
 
-  ybar <- mean(normal)
-  c <- 1 - (p-3)/eucl_len2(normal - ybar)
-  len_x2 <- eucl_len2(normal)
+  xbar <- mean(sample)
+  c <- 1 - (p-3)/eucl_len2(sample - xbar)
+  len_x2 <- eucl_len2(sample)
   a <- p - 2 #minimises risk
-  straw_a <- 0.0339
+  straw_a <- 0.0339 #values pre-calculated for use in Shao-Strawderman estimator when p = 10
   p_star <- 9.705
 
-  mean_shift <- ybar + c*(normal - ybar)
-  JS <- (1 - a/len_x2)*normal
-  posJS <- 0*normal
+  #calculating realisation of estimators
+  MCJS <- xbar + c*(sample - xbar)
+  JS <- (1 - a/len_x2)*sample
+  posJS <- 0*sample
   if (a < len_x2){
     posJS <- JS
   }
   straw <- posJS
   if (len_x2 >= p-2 & len_x2 <= p){
-    straw <- posJS - a*g(len_x2, p, p_star)*normal/len_x2
+    straw <- posJS - a*g(len_x2, p, p_star)*sample/len_x2
   }
-  lim_tr <- c()
-  for (i in 1:p){
-    lim_tr[i] <- min(c(max(c(mean_shift[i], normal[i] - 1)), normal[i] + 1))
+  LTE <- c()
+  for (j in 1:p){
+    LTE[j] <- min(c(max(c(MCJS[j], sample[j] - 1)), sample[j] + 1))
   }
   
-
+  #storing the value of the loss
   JS_loss <- c(JS_loss, loss_fn(JS - means))
   posJS_loss <- c(posJS_loss, loss_fn(posJS - means))
-  mean_shift_loss <- c(mean_shift_loss, loss_fn(mean_shift - means))
-  lim_tr_loss <- c(lim_tr_loss, loss_fn(lim_tr - means))
+  MCJS_loss <- c(MCJS_loss, loss_fn(MCJS - means))
+  LTE_loss <- c(LTE_loss, loss_fn(LTE - means))
   straw_loss <- c(straw_loss, loss_fn(straw - means))
-  intuitive_loss <- c(intuitive_loss, loss_fn(normal - means))
+  intuitive_loss <- c(intuitive_loss, loss_fn(sample - means))
 
     
     
-}
+  }
+  #store loss vectors in a list to be returned
   x <- list()
   x[[1]] <- JS_loss
   x[[2]] <- posJS_loss
-  x[[3]] <- mean_shift_loss
-  x[[4]] <- lim_tr_loss
+  x[[3]] <- MCJS_loss
+  x[[4]] <- LTE_loss
   x[[5]] <- straw_loss
   x[[6]] <- intuitive_loss
 
@@ -83,7 +92,7 @@ simulate <- function(means, loss_fn) {
   return(x)
 }
 
-find_means <- function(x) {
+find_means <- function(x) { #finds the mean of each vector in a list of vectors
   risk <- c()
   for (i in 1:length(x)) {
     risk[i] <- mean(x[[i]])
@@ -91,30 +100,32 @@ find_means <- function(x) {
   return(risk)
 }
 ```
-Simulate risk for Unif(-1, 1) prior
+Simulate risk for Unif(-1,1) prior
 ```{r}
 set.seed(267462)
 
 means_unif <- runif(p, -1, 1)
 unif <- simulate(means_unif, eucl_len2)
-names <- c("JS", "JS+", "a.JS", "LTE", "Shao-S", "MLE")
-colours <- brewer.pal(6, "Blues")
+names <- c("JS", "JS+", "MCJS", "LTE", "Shao-S", "MLE") #labels for barplot
+colours <- brewer.pal(6, "Blues") #set colour scheme for barplot
 
-png("zero.png", width=526, height=300)
+png("zero.png", width=526, height=300) #save barplot as a png
 
-barplot(find_means(unif), ylab = "Estimate of risk", names.arg = names, ylim = c(0, 10), col=colours)
+barplot(find_means(unif), ylab = "Estimate of risk", names.arg = names, ylim = c(0, 10), xlab = "Estimator", col=colours)
 
 dev.off()
 print(find_means(unif))
 ```
+Simulate risk for Unif(10,11) prior
 ```{r}
 set.seed(638462)
+
 means_large <- runif(p, 10, 11)
 large <- simulate(means_large, eucl_len2)
 
 png("large.png", width=526, height=300)
 
-barplot(find_means(large), ylab = "Estimate of risk", names.arg = names, ylim = c(0, 12), col=colours)
+barplot(find_means(large), ylab = "Estimate of risk", names.arg = names, ylim = c(0, 12), xlab = "Estimator", col=colours)
 
 dev.off()
 print(find_means(large))
@@ -123,39 +134,73 @@ print(find_means(large))
 Simulate risk when extreme values are added
 ```{r}
 set.seed(735284)
+
 means_extreme <- c(runif(p-2, -1, 1), runif(2, 40, 100))
 extreme <- simulate(means_extreme, eucl_len2)
 
 png("extreme.png", width=526, height=300)
 
-barplot(find_means(extreme), ylab = "Estimate of risk", names.arg = names, ylim = c(0, 12), col=colours)
+barplot(find_means(extreme), ylab = "Estimate of risk", names.arg = names, ylim = c(0, 12), xlab = "Estimator", col=colours)
 
 dev.off()
 print(find_means(extreme))
 ```
-To be redone 
+
+Experimenting with different loss function
 ```{r}
-#set.seed(8254236)
-#means_extreme_mod <- runif(p, -1, 1)
-#extreme_mod <- simulate(means_extreme_mod, mod_last)
+set.seed(735593)
 
-#png("extreme_mod.png", width=526, height=300)
+LTEsim <- function(means){
+LTEfinal <- rep(0, 10)
+aJSfinal <- rep(0, 10)
+MLEfinal <- rep(0, 10)
 
-#barplot(find_means(extreme_mod), ylab = "Estimate of risk", names.arg = names, ylim = c(0, 1), col=colours)
+for (i in 1:200){
+  realisation <- rnorm(10, means, 1)
 
-#dev.off()
-#print(find_means(extreme_mod))
-```
-Simulation for means clustered around two values - not particularly interesting
-```{r}
-set.seed(537225)
-means_pair <- c(runif(p/2, 5, 6), runif(p/2, -6, -5))
-pair <- simulate(means_pair, eucl_len2)
+  xbar <- mean(realisation)
+  c <- 1 - 7/eucl_len2(realisation - xbar) # p - 3 = 10 - 3 = 7
+  aJS <- xbar + c*(realisation - xbar)
+  
+  LTE <- c()
+  for (j in 1:10){
+    LTE[j] <- min(c(max(c(aJS[j], realisation[j] - 1)), realisation[j] + 1))
+  }
+  
+  aJSerror <- abs(aJS - means)
+  LTEerror <- abs(LTE - means)
+  MLEerror <- abs(realisation - means)
+  
+  aJSfinal <- aJSfinal + aJSerror
+  LTEfinal <- LTEfinal + LTEerror
+  MLEfinal <- MLEfinal + MLEerror 
+}
+aJSfinal <- aJSfinal/200
+LTEfinal <- LTEfinal/200
+MLEfinal <- MLEfinal/200
 
-png("pair.png", width=526, height=300)
+errordata <- matrix(c(aJSfinal, LTEfinal, MLEfinal), nrow=3, byrow=TRUE)
+return(errordata)
+}
 
-barplot(find_means(pair), ylab = "Estimate of risk", names.arg = names, ylim = c(0, 12), col=colours)
+means <- rnorm(10, 30, 1) #generate set of means which are normally distributed
+
+LTE1 <- LTEsim(means) 
+
+png("LTE1.png", width=526, height=400)
+
+barplot(LTE1, beside=TRUE, col = brewer.pal(3, "Blues"), ylim = c(0,1.2), ylab = "Estimate of risk", names.arg=c(1:10), legend=TRUE)
+legend("topright", legend = c("MCJS", "LTE", "MLE"), pch = c(15,15,15), col=brewer.pal(3, "Blues"))
 
 dev.off()
-print(find_means(pair))
+
+LTE2 <- LTEsim(c(rnorm(8, 30, 1), runif(2, 50, 60))) #generate means with extreme values
+png("LTE2.png", width=526, height=400)
+
+barplot(LTE2, beside=TRUE, col = brewer.pal(3, "Blues"), ylim = c(0,1.2), ylab = "Estimate of risk", names.arg=c(1:10), legend=TRUE)
+legend("topright", legend = c("MCJS", "LTE", "MLE"), pch = c(15,15,15), col=brewer.pal(3, "Blues"))
+dev.off()
+
+means
+abs(means-30)
 ```

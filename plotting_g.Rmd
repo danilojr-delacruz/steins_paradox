@@ -1,0 +1,50 @@
+---
+title: "Generating g"
+author: "Danilo Jr Dela Cruz"
+date: "13/06/2021"
+output: pdf_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+```{r}
+library(ggplot2)
+library(latex2exp)
+library(RColorBrewer) 
+```
+
+```{r}
+p = 5
+p_star = 4.5
+g <- function(t){
+    if (t < p - 1){
+        return(g(2*(p - 1) - t))
+    }
+    if (t < p_star){
+        return(2*p_star - p - t)
+    }
+    else{
+        return(t - p)
+    }
+}
+
+g = Vectorize(g)
+```
+
+```{r}
+k = p-1
+colours <- brewer.pal(3, "Blues")
+ggplot(data.frame(x = c((p-1)-k, (p-1)+k))) + 
+    aes(x = x) +
+    stat_function(fun = g, color = colours[3], lwd = 1.2) +
+    labs(x = "", y="") +
+    theme_void() +
+    geom_hline(yintercept = 0) +
+    xlim(p-1-k, p-1+k) +
+    annotate("text", p - 1, -0.5, label=TeX("p - 1")) +
+    annotate("text", p_star, -0.1, label=TeX("p^*")) +
+    annotate("text", p + 0.1, -0.1, label=TeX("p")) + 
+    annotate("text", p - 2 - 0.3, -0.1, label=TeX("p - 2"))
+```
