@@ -1,0 +1,36 @@
+---
+title: "Risk Function of Constant Estimators"
+author: "Danilo Jr Dela Cruz"
+date: "13/06/2021"
+output: pdf_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+```{r}
+library(ggplot2)
+library(latex2exp)
+library(RColorBrewer) 
+```
+
+```{r}
+c = 0
+risk_fun <- function(t){
+    return((t-c^2)
+}
+```
+
+```{r}
+k = 3
+colours <- brewer.pal(3, "Blues")
+ggplot(data.frame(x = c(-k, k))) + 
+    aes(x = x) +
+    stat_function(fun = risk_fun, color = colours[3], lwd = 1.2) +
+    labs(x = "", y="") +
+    theme_void() +
+    geom_hline(yintercept = 0) +
+    xlim(-k, k) +
+    annotate("text", c, -0.3, label=TeX("c"))
+```
