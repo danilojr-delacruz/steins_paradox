@@ -50,7 +50,7 @@ Using Anscombe's transformation.
 
 ```{r}
 transformed = 2*sqrt(goals_first_part$goals +3/8)
-transformed
+mean(transformed)
 ```
 Carry out original James Stein
 ```{r}

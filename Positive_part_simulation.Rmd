@@ -11,6 +11,7 @@ knitr::opts_chunk$set(echo = TRUE)
 
 
 ```{r}
+#Setup relevant libraries
 library(pracma)
 library(ggplot2)
 library(latex2exp)
@@ -19,40 +20,47 @@ y1 <- c()
 y2 <- c()
 y2_hat <- c()
 norm = c()
-cfinal = c()
+#vary theta, centre of uniform distrbution
 for (theta in linspace(0,4,120)){
+  means <- c()
   c_list = c()
   sum = c(0,0,0)
+  #generate means
+  for (i in 1:n){
+  mean <- runif(1,theta-.01,theta+0.1)
+  means <- c(means, mean)
+  }
   for (i in 1:100){
   matrix = c(0,0,0)
   data <- c()
   n = 6
-  means <- c()
+  #generate 6 means from uniform distribution with centre theta
   for (i in 1:n){
-  mean <- runif(1,theta-.01,theta+0.1)
-  val = rnorm(1, mean, 1)
+  #realisation of normal distribution with sd=1 and mean = 'mean'
+  val = rnorm(1, means[i], 1)
   data = c(data, val)
-  means <- c(means, mean)
   }
+  #calculate shrinking constant
   c = (1-((n-2)/(Norm(data)^2)))
   c_hat = max(0, c)
+  #James-Stein estimate
   data1 = c*data
+  #Positive Part James-Stein estimate
   data2 = c_hat*data
-  c_list = c(c_list, c)
   matrix = c(Norm(theta-data)^2, Norm(theta-data1)^2, Norm(theta-data2)^2)
-
   sum = sum + matrix
   }
-  cfinal = c(cfinal, mean(c_list))
+  #take average
   sum = sum/100
-  norm = c(norm, Norm(means))
+  norm = c(norm, Norm(rep(means)))
   y1 = c(y1, sum[1])
   y2 = c(y2, sum[2])
   y2_hat = c(y2_hat, sum[3])
 }
+#plot graph for use within project report
 colours <- brewer.pal(3, "Blues")
 ggplot() + geom_smooth(aes(x = norm ,y = y2, color = 'a'), se = FALSE)  + 
   geom_smooth(aes(x = norm, y = y2_hat, color ='b'), se = FALSE) + 
-  labs(x = TeX("$E\\|| \\theta ||$"), y = "SSE") +theme(panel.grid.major = element_blank(), panel.grid.minor = element_blank(),panel.background = element_blank(), axis.line = element_line(colour = "black"), legend.key = element_rect(colour = NA, fill = NA)) + 
+  labs(x = TeX("$||\\theta ||$"), y = "SSE") +theme(panel.grid.major = element_blank(), panel.grid.minor = element_blank(),panel.background = element_blank(), axis.line = element_line(colour = "black"), legend.key = element_rect(colour = NA, fill = NA)) + 
   scale_colour_manual(name = 'Estimator', guide = "legend", values = c('a' = colours[2], 'b' = colours[3]), labels = c('JS','JS+')) 
 ```
